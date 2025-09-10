@@ -1,0 +1,44 @@
+---
+description: Project context
+globs:
+alwaysApply: true
+---
+
+Acme Corp. is negotiating a multi-billion dollar acquisition and wants to conduct due diligence by
+placing all the relevant documents in a virtual Data Room. A Data Room is an organized
+repository for securely storing and distributing documents. You can take inspiration from Google
+Drive, Dropbox, Box, etc., for UI/UX where the Data Room is the top-level folder or drive.
+Our goal is for you to develop a Data Room Software MVP that works well out of the box. We ask that
+you optimize for (in this order):
+
+- User experience and functionality
+- Design and polish
+- Code quality and readability
+
+Technical Requirements
+
+- Build a Dataroom frontend single page application,
+- We will use React / TypeScript / Tailwind/ Shadcn
+- Users can create Datarooms and upload files
+- Make use of good data structures to store metadata and state, designed to support functional
+  requirements
+- Handle edge cases, ex: uploading files with the same name etc
+- Create granular react components
+
+Functional Requirements
+Main CRUD functionality you should build for
+
+● Folders:
+
+- Create a folder and can nest folders in another folder
+- View folders and their contents, this includes nested files and folders
+- Update the folder name
+- Delete a folder and its nested folders and files
+
+● Files:
+
+- Upload a file, you can support only pdf files for now and can store it in browser memory
+  (mock)
+- View file in UI
+- Update a files name
+- Delete a file
