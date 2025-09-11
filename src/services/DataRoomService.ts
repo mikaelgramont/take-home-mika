@@ -148,7 +148,7 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     return this.getStoredDataRoom();
   }
 
-  async initializeDataRoom(name: string): Promise<DataRoom> {
+  async initializeDataRoom(): Promise<DataRoom> {
     const existingDataRoom = this.getStoredDataRoom();
     if (existingDataRoom) {
       return existingDataRoom;
@@ -169,7 +169,6 @@ export class LocalStorageDataRoomService implements IDataRoomService {
 
     const dataRoom: DataRoom = {
       id,
-      name,
       createdAt: now,
       updatedAt: now,
       rootFolder,
@@ -178,19 +177,6 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     };
 
     this.setDataRoom(dataRoom);
-    return dataRoom;
-  }
-
-  async updateDataRoomName(name: string): Promise<DataRoom> {
-    const dataRoom = this.getStoredDataRoom();
-    if (!dataRoom) {
-      throw new Error("DataRoom not found. Please initialize it first.");
-    }
-
-    dataRoom.name = name;
-    dataRoom.updatedAt = new Date();
-    this.setDataRoom(dataRoom);
-
     return dataRoom;
   }
 

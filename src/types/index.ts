@@ -75,7 +75,6 @@ export type DataRoomItem = File | Folder;
 // Main data room structure
 export interface DataRoom {
   id: string;
-  name: string;
   createdAt: Date;
   updatedAt: Date;
   rootFolder: Folder;
