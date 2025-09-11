@@ -1,6 +1,5 @@
 import type {
   DataRoom,
-  DataRoomSummary,
   DataRoomItem,
   File,
   Folder,
@@ -10,70 +9,39 @@ import type {
 // Service interface for future network implementation
 export interface IDataRoomService {
   // DataRoom operations
-  createDataRoom(name: string): Promise<DataRoom>;
-  getDataRoom(id: string): Promise<DataRoom | null>;
-  getAllDataRooms(): Promise<DataRoomSummary[]>;
-  updateDataRoom(id: string, name: string): Promise<DataRoom>;
-  deleteDataRoom(id: string): Promise<void>;
+  getDataRoom(): Promise<DataRoom | null>;
+  initializeDataRoom(name: string): Promise<DataRoom>;
+  updateDataRoomName(name: string): Promise<DataRoom>;
 
   // Folder operations
-  createFolder(
-    dataRoomId: string,
-    name: string,
-    parentId?: string | null
-  ): Promise<Folder>;
-  getFolder(dataRoomId: string, folderId: string): Promise<Folder | null>;
-  updateFolderName(
-    dataRoomId: string,
-    folderId: string,
-    name: string
-  ): Promise<Folder>;
-  deleteFolder(dataRoomId: string, folderId: string): Promise<void>;
+  createFolder(name: string, parentId?: string | null): Promise<Folder>;
+  getFolder(folderId: string): Promise<Folder | null>;
+  updateFolderName(folderId: string, name: string): Promise<Folder>;
+  deleteFolder(folderId: string): Promise<void>;
 
   // File operations
-  uploadFile(
-    dataRoomId: string,
-    file: File,
-    parentId?: string | null
-  ): Promise<File>;
-  getFile(dataRoomId: string, fileId: string): Promise<File | null>;
-  updateFileName(
-    dataRoomId: string,
-    fileId: string,
-    name: string
-  ): Promise<File>;
-  deleteFile(dataRoomId: string, fileId: string): Promise<void>;
+  uploadFile(file: globalThis.File, parentId?: string | null): Promise<File>;
+  getFile(fileId: string): Promise<File | null>;
+  updateFileName(fileId: string, name: string): Promise<File>;
+  deleteFile(fileId: string): Promise<void>;
 
   // Utility operations
-  getFolderContents(
-    dataRoomId: string,
-    folderId?: string | null
-  ): Promise<DataRoomItem[]>;
-  searchItems(dataRoomId: string, query: string): Promise<DataRoomItem[]>;
+  getFolderContents(folderId?: string | null): Promise<DataRoomItem[]>;
+  searchItems(query: string): Promise<DataRoomItem[]>;
 }
 
 // Local storage implementation
 export class LocalStorageDataRoomService implements IDataRoomService {
   private readonly STORAGE_KEY = "dataroom_data";
-  private readonly DATA_ROOMS_KEY = "datarooms";
 
   // Helper methods for local storage
-  private getStorageData(): Record<string, DataRoom> {
+  private getStoredDataRoom(): DataRoom | null {
     const data = localStorage.getItem(this.STORAGE_KEY);
-    return data ? JSON.parse(data) : {};
+    return data ? JSON.parse(data) : null;
   }
 
-  private setStorageData(data: Record<string, DataRoom>): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-  }
-
-  private getDataRoomSummaries(): DataRoomSummary[] {
-    const summaries = localStorage.getItem(this.DATA_ROOMS_KEY);
-    return summaries ? JSON.parse(summaries) : [];
-  }
-
-  private setDataRoomSummaries(summaries: DataRoomSummary[]): void {
-    localStorage.setItem(this.DATA_ROOMS_KEY, JSON.stringify(summaries));
+  private setDataRoom(dataRoom: DataRoom): void {
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(dataRoom));
   }
 
   // Helper to generate unique IDs
@@ -102,10 +70,13 @@ export class LocalStorageDataRoomService implements IDataRoomService {
   ): Folder | null {
     for (const item of items) {
       if (item.type === "folder") {
-        if (item.children.some((child) => child.id === targetId)) {
-          return item;
+        if ((item as Folder).children.some((child) => child.id === targetId)) {
+          return item as Folder;
         }
-        const found = this.findParentFolder(item.children, targetId);
+        const found = this.findParentFolder(
+          (item as Folder).children,
+          targetId
+        );
         if (found) return found;
       }
     }
@@ -120,7 +91,7 @@ export class LocalStorageDataRoomService implements IDataRoomService {
         return true;
       }
       if (items[i].type === "folder") {
-        if (this.removeFromParent(items[i].children, targetId)) {
+        if (this.removeFromParent((items[i] as Folder).children, targetId)) {
           return true;
         }
       }
@@ -140,7 +111,9 @@ export class LocalStorageDataRoomService implements IDataRoomService {
         return true;
       }
       if (item.type === "folder") {
-        if (this.updateItemInNested(item.children, targetId, updates)) {
+        if (
+          this.updateItemInNested((item as Folder).children, targetId, updates)
+        ) {
           return true;
         }
       }
@@ -159,9 +132,9 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     for (const child of folder.children) {
       if (child.type === "file") {
         totalFiles++;
-        totalSize += child.size;
+        totalSize += (child as File).size;
       } else {
-        const stats = this.calculateFolderStats(child);
+        const stats = this.calculateFolderStats(child as Folder);
         totalFiles += stats.totalFiles;
         totalSize += stats.totalSize;
       }
@@ -171,7 +144,16 @@ export class LocalStorageDataRoomService implements IDataRoomService {
   }
 
   // DataRoom operations
-  async createDataRoom(name: string): Promise<DataRoom> {
+  async getDataRoom(): Promise<DataRoom | null> {
+    return this.getStoredDataRoom();
+  }
+
+  async initializeDataRoom(name: string): Promise<DataRoom> {
+    const existingDataRoom = this.getStoredDataRoom();
+    if (existingDataRoom) {
+      return existingDataRoom;
+    }
+
     const id = this.generateId();
     const now = new Date();
 
@@ -195,85 +177,29 @@ export class LocalStorageDataRoomService implements IDataRoomService {
       totalSize: 0,
     };
 
-    // Save to storage
-    const data = this.getStorageData();
-    data[id] = dataRoom;
-    this.setStorageData(data);
-
-    // Update summaries
-    const summaries = this.getDataRoomSummaries();
-    summaries.push({
-      id,
-      name,
-      createdAt: now,
-      updatedAt: now,
-      totalFiles: 0,
-      totalSize: 0,
-    });
-    this.setDataRoomSummaries(summaries);
-
+    this.setDataRoom(dataRoom);
     return dataRoom;
   }
 
-  async getDataRoom(id: string): Promise<DataRoom | null> {
-    const data = this.getStorageData();
-    return data[id] || null;
-  }
-
-  async getAllDataRooms(): Promise<DataRoomSummary[]> {
-    return this.getDataRoomSummaries();
-  }
-
-  async updateDataRoom(id: string, name: string): Promise<DataRoom> {
-    const data = this.getStorageData();
-    const dataRoom = data[id];
-
+  async updateDataRoomName(name: string): Promise<DataRoom> {
+    const dataRoom = this.getStoredDataRoom();
     if (!dataRoom) {
-      throw new Error(`DataRoom with id ${id} not found`);
+      throw new Error("DataRoom not found. Please initialize it first.");
     }
 
     dataRoom.name = name;
     dataRoom.updatedAt = new Date();
-    this.setStorageData(data);
-
-    // Update summaries
-    const summaries = this.getDataRoomSummaries();
-    const summaryIndex = summaries.findIndex((s) => s.id === id);
-    if (summaryIndex !== -1) {
-      summaries[summaryIndex].name = name;
-      summaries[summaryIndex].updatedAt = dataRoom.updatedAt;
-      this.setDataRoomSummaries(summaries);
-    }
+    this.setDataRoom(dataRoom);
 
     return dataRoom;
   }
 
-  async deleteDataRoom(id: string): Promise<void> {
-    const data = this.getStorageData();
-    if (!data[id]) {
-      throw new Error(`DataRoom with id ${id} not found`);
-    }
-
-    delete data[id];
-    this.setStorageData(data);
-
-    // Update summaries
-    const summaries = this.getDataRoomSummaries();
-    const filteredSummaries = summaries.filter((s) => s.id !== id);
-    this.setDataRoomSummaries(filteredSummaries);
-  }
-
   // Folder operations
-  async createFolder(
-    dataRoomId: string,
-    name: string,
-    parentId?: string | null
-  ): Promise<Folder> {
-    const data = this.getStorageData();
-    const dataRoom = data[dataRoomId];
+  async createFolder(name: string, parentId?: string | null): Promise<Folder> {
+    const dataRoom = this.getStoredDataRoom();
 
     if (!dataRoom) {
-      throw new Error(`DataRoom with id ${dataRoomId} not found`);
+      throw new Error("DataRoom not found. Please initialize it first.");
     }
 
     const now = new Date();
@@ -304,17 +230,13 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     }
 
     dataRoom.updatedAt = now;
-    this.setStorageData(data);
+    this.setDataRoom(dataRoom);
 
     return folder;
   }
 
-  async getFolder(
-    dataRoomId: string,
-    folderId: string
-  ): Promise<Folder | null> {
-    const data = this.getStorageData();
-    const dataRoom = data[dataRoomId];
+  async getFolder(folderId: string): Promise<Folder | null> {
+    const dataRoom = this.getStoredDataRoom();
 
     if (!dataRoom) {
       return null;
@@ -324,16 +246,11 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     return folder && folder.type === "folder" ? (folder as Folder) : null;
   }
 
-  async updateFolderName(
-    dataRoomId: string,
-    folderId: string,
-    name: string
-  ): Promise<Folder> {
-    const data = this.getStorageData();
-    const dataRoom = data[dataRoomId];
+  async updateFolderName(folderId: string, name: string): Promise<Folder> {
+    const dataRoom = this.getStoredDataRoom();
 
     if (!dataRoom) {
-      throw new Error(`DataRoom with id ${dataRoomId} not found`);
+      throw new Error("DataRoom not found. Please initialize it first.");
     }
 
     const folder = this.findItemById([dataRoom.rootFolder], folderId) as Folder;
@@ -344,17 +261,16 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     folder.name = name;
     folder.updatedAt = new Date();
     dataRoom.updatedAt = new Date();
-    this.setStorageData(data);
+    this.setDataRoom(dataRoom);
 
     return folder;
   }
 
-  async deleteFolder(dataRoomId: string, folderId: string): Promise<void> {
-    const data = this.getStorageData();
-    const dataRoom = data[dataRoomId];
+  async deleteFolder(folderId: string): Promise<void> {
+    const dataRoom = this.getStoredDataRoom();
 
     if (!dataRoom) {
-      throw new Error(`DataRoom with id ${dataRoomId} not found`);
+      throw new Error("DataRoom not found. Please initialize it first.");
     }
 
     const folder = this.findItemById([dataRoom.rootFolder], folderId) as Folder;
@@ -371,20 +287,18 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     dataRoom.totalSize = stats.totalSize;
     dataRoom.updatedAt = new Date();
 
-    this.setStorageData(data);
+    this.setDataRoom(dataRoom);
   }
 
   // File operations
   async uploadFile(
-    dataRoomId: string,
-    file: File,
+    file: globalThis.File,
     parentId?: string | null
   ): Promise<File> {
-    const data = this.getStorageData();
-    const dataRoom = data[dataRoomId];
+    const dataRoom = this.getStoredDataRoom();
 
     if (!dataRoom) {
-      throw new Error(`DataRoom with id ${dataRoomId} not found`);
+      throw new Error("DataRoom not found. Please initialize it first.");
     }
 
     const now = new Date();
@@ -422,14 +336,13 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     dataRoom.totalSize = stats.totalSize;
     dataRoom.updatedAt = now;
 
-    this.setStorageData(data);
+    this.setDataRoom(dataRoom);
 
     return fileItem;
   }
 
-  async getFile(dataRoomId: string, fileId: string): Promise<File | null> {
-    const data = this.getStorageData();
-    const dataRoom = data[dataRoomId];
+  async getFile(fileId: string): Promise<File | null> {
+    const dataRoom = this.getStoredDataRoom();
 
     if (!dataRoom) {
       return null;
@@ -439,16 +352,11 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     return file && file.type === "file" ? (file as File) : null;
   }
 
-  async updateFileName(
-    dataRoomId: string,
-    fileId: string,
-    name: string
-  ): Promise<File> {
-    const data = this.getStorageData();
-    const dataRoom = data[dataRoomId];
+  async updateFileName(fileId: string, name: string): Promise<File> {
+    const dataRoom = this.getStoredDataRoom();
 
     if (!dataRoom) {
-      throw new Error(`DataRoom with id ${dataRoomId} not found`);
+      throw new Error("DataRoom not found. Please initialize it first.");
     }
 
     const file = this.findItemById([dataRoom.rootFolder], fileId) as File;
@@ -459,17 +367,16 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     file.name = name;
     file.updatedAt = new Date();
     dataRoom.updatedAt = new Date();
-    this.setStorageData(data);
+    this.setDataRoom(dataRoom);
 
     return file;
   }
 
-  async deleteFile(dataRoomId: string, fileId: string): Promise<void> {
-    const data = this.getStorageData();
-    const dataRoom = data[dataRoomId];
+  async deleteFile(fileId: string): Promise<void> {
+    const dataRoom = this.getStoredDataRoom();
 
     if (!dataRoom) {
-      throw new Error(`DataRoom with id ${dataRoomId} not found`);
+      throw new Error("DataRoom not found. Please initialize it first.");
     }
 
     const file = this.findItemById([dataRoom.rootFolder], fileId) as File;
@@ -486,19 +393,15 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     dataRoom.totalSize = stats.totalSize;
     dataRoom.updatedAt = new Date();
 
-    this.setStorageData(data);
+    this.setDataRoom(dataRoom);
   }
 
   // Utility operations
-  async getFolderContents(
-    dataRoomId: string,
-    folderId?: string | null
-  ): Promise<DataRoomItem[]> {
-    const data = this.getStorageData();
-    const dataRoom = data[dataRoomId];
+  async getFolderContents(folderId?: string | null): Promise<DataRoomItem[]> {
+    const dataRoom = this.getStoredDataRoom();
 
     if (!dataRoom) {
-      throw new Error(`DataRoom with id ${dataRoomId} not found`);
+      throw new Error("DataRoom not found. Please initialize it first.");
     }
 
     if (!folderId) {
@@ -513,15 +416,11 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     return folder.children;
   }
 
-  async searchItems(
-    dataRoomId: string,
-    query: string
-  ): Promise<DataRoomItem[]> {
-    const data = this.getStorageData();
-    const dataRoom = data[dataRoomId];
+  async searchItems(query: string): Promise<DataRoomItem[]> {
+    const dataRoom = this.getStoredDataRoom();
 
     if (!dataRoom) {
-      throw new Error(`DataRoom with id ${dataRoomId} not found`);
+      throw new Error("DataRoom not found. Please initialize it first.");
     }
 
     const results: DataRoomItem[] = [];

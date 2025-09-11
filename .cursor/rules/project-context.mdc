@@ -42,3 +42,5 @@ Main CRUD functionality you should build for
 - View file in UI
 - Update a files name
 - Delete a file
+
+There is only one single DataRoom, no need to handle multiple DataRooms.

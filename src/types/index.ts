@@ -82,13 +82,3 @@ export interface DataRoom {
   totalFiles: number;
   totalSize: number; // in bytes
 }
-
-// Data room metadata for listing
-export interface DataRoomSummary {
-  id: string;
-  name: string;
-  createdAt: Date;
-  updatedAt: Date;
-  totalFiles: number;
-  totalSize: number;
-}
