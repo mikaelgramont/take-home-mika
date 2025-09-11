@@ -4,13 +4,13 @@ import type {
   File,
   Folder,
   BaseEntity,
-} from "../types";
+} from "../types/index.ts";
 
 // Service interface for future network implementation
 export interface IDataRoomService {
   // DataRoom operations
   getDataRoom(): Promise<DataRoom | null>;
-  initializeDataRoom(name: string): Promise<DataRoom>;
+  initializeDataRoom(): DataRoom;
   updateDataRoomName(name: string): Promise<DataRoom>;
 
   // Folder operations
@@ -37,7 +37,34 @@ export class LocalStorageDataRoomService implements IDataRoomService {
   // Helper methods for local storage
   private getStoredDataRoom(): DataRoom | null {
     const data = localStorage.getItem(this.STORAGE_KEY);
-    return data ? JSON.parse(data) : null;
+    if (!data) return null;
+
+    const parsed = JSON.parse(data);
+    // Convert string dates back to Date objects
+    this.convertDatesToObjects(parsed);
+    return parsed;
+  }
+
+  // Helper to recursively convert date strings to Date objects
+  private convertDatesToObjects(obj: unknown): void {
+    if (obj && typeof obj === "object" && obj !== null) {
+      const objRecord = obj as Record<string, unknown>;
+
+      // Convert known date fields
+      if (objRecord.createdAt && typeof objRecord.createdAt === "string") {
+        objRecord.createdAt = new Date(objRecord.createdAt);
+      }
+      if (objRecord.updatedAt && typeof objRecord.updatedAt === "string") {
+        objRecord.updatedAt = new Date(objRecord.updatedAt);
+      }
+
+      // Recursively process nested objects and arrays
+      for (const key in objRecord) {
+        if (objRecord[key] && typeof objRecord[key] === "object") {
+          this.convertDatesToObjects(objRecord[key]);
+        }
+      }
+    }
   }
 
   private setDataRoom(dataRoom: DataRoom): void {
@@ -148,7 +175,7 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     return this.getStoredDataRoom();
   }
 
-  async initializeDataRoom(): Promise<DataRoom> {
+  initializeDataRoom(): DataRoom {
     const existingDataRoom = this.getStoredDataRoom();
     if (existingDataRoom) {
       return existingDataRoom;
@@ -176,6 +203,18 @@ export class LocalStorageDataRoomService implements IDataRoomService {
       totalSize: 0,
     };
 
+    this.setDataRoom(dataRoom);
+    return dataRoom;
+  }
+
+  async updateDataRoomName(name: string): Promise<DataRoom> {
+    const dataRoom = this.getStoredDataRoom();
+    if (!dataRoom) {
+      throw new Error("DataRoom not found. Please initialize it first.");
+    }
+
+    dataRoom.rootFolder.name = name;
+    dataRoom.updatedAt = new Date();
     this.setDataRoom(dataRoom);
     return dataRoom;
   }
