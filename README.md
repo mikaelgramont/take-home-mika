@@ -18,3 +18,5 @@ I'll be adding notes here as I build this.
 6. Added Breadcrumbs
 
 7. Made the URL the source of truth for current path
+
+8. Rename and delete. The buttons for these still need to be styled a bit better, but we're using ShadCDN Dialogs.

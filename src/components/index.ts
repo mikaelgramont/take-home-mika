@@ -1,2 +1,7 @@
 export { default as DataRoomTreeView } from "./DataRoomTreeView";
+export { default as Content } from "./Content";
+export { default as FolderContent } from "./FolderContent";
+export { default as FileContent } from "./FileContent";
+export { default as RenameDialog } from "./RenameDialog";
+export { default as DeleteDialog } from "./DeleteDialog";
 export { TreeView, type TreeDataItem } from "./tree-view";

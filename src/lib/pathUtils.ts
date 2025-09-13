@@ -87,7 +87,10 @@ export function getItemPath(item: DataRoomItem, rootFolder: Folder): string {
 /**
  * Helper function to find an item by ID in the folder structure
  */
-function findItemById(rootFolder: Folder, id: string): DataRoomItem | null {
+export function findItemById(
+  rootFolder: Folder,
+  id: string
+): DataRoomItem | null {
   if (rootFolder.id === id) {
     return rootFolder;
   }
@@ -106,4 +109,23 @@ function findItemById(rootFolder: Folder, id: string): DataRoomItem | null {
   }
 
   return null;
+}
+
+/**
+ * Finds the parent folder of a given item
+ */
+export function findParentFolder(
+  item: DataRoomItem,
+  rootFolder: Folder
+): Folder | null {
+  if (item.id === rootFolder.id) {
+    return null; // Root folder has no parent
+  }
+
+  if (!item.parentId) {
+    return null; // Item has no parent
+  }
+
+  const parent = findItemById(rootFolder, item.parentId);
+  return parent && parent.type === "folder" ? (parent as Folder) : null;
 }

@@ -8,9 +8,15 @@ import {
 } from "react-router-dom";
 import DataRoomTreeView from "@/components/DataRoomTreeView";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import Content from "@/components/Content";
 import { dataRoomService } from "@/services/DataRoomService";
-import { findItemByPath, getItemPath } from "@/lib/pathUtils";
-import type { DataRoomItem, File, Folder, DataRoom } from "@/types";
+import {
+  findItemByPath,
+  getItemPath,
+  findParentFolder,
+  findItemById,
+} from "@/lib/pathUtils";
+import type { DataRoomItem, DataRoom } from "@/types";
 
 function DataRoomApp() {
   const { "*": rawPath = "/" } = useParams<{ "*"?: string }>();
@@ -18,7 +24,7 @@ function DataRoomApp() {
   const path = decodeURIComponent(rawPath);
 
   const navigate = useNavigate();
-  const [dataRoom] = useState<DataRoom | null>(() =>
+  const [dataRoom, setDataRoom] = useState<DataRoom | null>(() =>
     dataRoomService.initializeDataRoom()
   );
   const [selectedItem, setSelectedItem] = useState<DataRoomItem | null>(null);
@@ -55,6 +61,137 @@ function DataRoomApp() {
     }
   };
 
+  const handleRenameFolder = async (folderId: string, newName: string) => {
+    try {
+      await dataRoomService.updateFolderName(folderId, newName);
+      // Refresh the data room from storage
+      const updatedDataRoom = await dataRoomService.getDataRoom();
+      if (updatedDataRoom) {
+        setDataRoom(updatedDataRoom);
+        // Update selected item if it's the renamed folder
+        if (selectedItem?.id === folderId) {
+          const updatedItem = findItemById(
+            updatedDataRoom.rootFolder,
+            folderId
+          );
+          setSelectedItem(updatedItem);
+          // Update URL to reflect the new path
+          if (updatedItem) {
+            const newPath = getItemPath(
+              updatedItem,
+              updatedDataRoom.rootFolder
+            );
+            navigate(newPath);
+          }
+        }
+      }
+    } catch (err) {
+      setError(
+        `Failed to rename folder: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
+    }
+  };
+
+  const handleDeleteFolder = async (folderId: string) => {
+    try {
+      // Find parent folder before deletion
+      const parentFolder = selectedItem
+        ? findParentFolder(selectedItem, dataRoom!.rootFolder)
+        : null;
+
+      await dataRoomService.deleteFolder(folderId);
+      // Refresh the data room from storage
+      const updatedDataRoom = await dataRoomService.getDataRoom();
+      if (updatedDataRoom) {
+        setDataRoom(updatedDataRoom);
+        // Navigate to parent or root if deleted folder was selected
+        if (selectedItem?.id === folderId) {
+          if (parentFolder) {
+            const parentPath = getItemPath(
+              parentFolder,
+              updatedDataRoom.rootFolder
+            );
+            navigate(parentPath);
+          } else {
+            navigate("/");
+          }
+        }
+      }
+    } catch (err) {
+      setError(
+        `Failed to delete folder: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
+    }
+  };
+
+  const handleRenameFile = async (fileId: string, newName: string) => {
+    try {
+      await dataRoomService.updateFileName(fileId, newName);
+      // Refresh the data room from storage
+      const updatedDataRoom = await dataRoomService.getDataRoom();
+      if (updatedDataRoom) {
+        setDataRoom(updatedDataRoom);
+        // Update selected item if it's the renamed file
+        if (selectedItem?.id === fileId) {
+          const updatedItem = findItemById(updatedDataRoom.rootFolder, fileId);
+          setSelectedItem(updatedItem);
+          // Update URL to reflect the new path
+          if (updatedItem) {
+            const newPath = getItemPath(
+              updatedItem,
+              updatedDataRoom.rootFolder
+            );
+            navigate(newPath);
+          }
+        }
+      }
+    } catch (err) {
+      setError(
+        `Failed to rename file: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
+    }
+  };
+
+  const handleDeleteFile = async (fileId: string) => {
+    try {
+      // Find parent folder before deletion
+      const parentFolder = selectedItem
+        ? findParentFolder(selectedItem, dataRoom!.rootFolder)
+        : null;
+
+      await dataRoomService.deleteFile(fileId);
+      // Refresh the data room from storage
+      const updatedDataRoom = await dataRoomService.getDataRoom();
+      if (updatedDataRoom) {
+        setDataRoom(updatedDataRoom);
+        // Navigate to parent or root if deleted file was selected
+        if (selectedItem?.id === fileId) {
+          if (parentFolder) {
+            const parentPath = getItemPath(
+              parentFolder,
+              updatedDataRoom.rootFolder
+            );
+            navigate(parentPath);
+          } else {
+            navigate("/");
+          }
+        }
+      }
+    } catch (err) {
+      setError(
+        `Failed to delete file: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
+    }
+  };
+
   if (!dataRoom) {
     return <div>No data room!</div>;
   }
@@ -74,7 +211,7 @@ function DataRoomApp() {
         />
         <div className="flex items-center gap-4">
           <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-            Upload File
+            Upload
           </button>
           <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
             New Folder
@@ -84,60 +221,23 @@ function DataRoomApp() {
 
       {/* Tree View */}
       <div className="grid-area-tree bg-gray-50 border-r border-gray-200 p-4 overflow-y-auto">
-        <h2 className="text-lg font-semibold mb-4 text-gray-900">
-          File Structure
-        </h2>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <DataRoomTreeView
-            root={dataRoom.rootFolder}
-            onItemSelect={handleItemSelect}
-            selectedItemId={selectedItem?.id}
-            expandAll={false}
-          />
-        </div>
+        <DataRoomTreeView
+          root={dataRoom.rootFolder}
+          onItemSelect={handleItemSelect}
+          selectedItemId={selectedItem?.id}
+          expandAll={false}
+        />
       </div>
 
       {/* Content Area */}
       <div className="grid-area-content bg-white p-6 overflow-y-auto">
-        <h2 className="text-lg font-semibold mb-4 text-gray-900">
-          Selected Item
-        </h2>
-        <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
-          {selectedItem ? (
-            <div className="space-y-3">
-              <p>
-                <strong>Name:</strong> {selectedItem.name}
-              </p>
-              <p>
-                <strong>Type:</strong> {selectedItem.type}
-              </p>
-              <p>
-                <strong>ID:</strong> {selectedItem.id}
-              </p>
-              <p>
-                <strong>Created:</strong>{" "}
-                {selectedItem.createdAt.toLocaleDateString()}
-              </p>
-              <p>
-                <strong>Updated:</strong>{" "}
-                {selectedItem.updatedAt.toLocaleDateString()}
-              </p>
-              {selectedItem.type === "file" && (
-                <p>
-                  <strong>Size:</strong> {(selectedItem as File).size} bytes
-                </p>
-              )}
-              {selectedItem.type === "folder" && (
-                <p>
-                  <strong>Children:</strong>{" "}
-                  {(selectedItem as Folder).children.length} items
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="text-gray-500">No item selected</p>
-          )}
-        </div>
+        <Content
+          selectedItem={selectedItem}
+          onRenameFolder={handleRenameFolder}
+          onDeleteFolder={handleDeleteFolder}
+          onRenameFile={handleRenameFile}
+          onDeleteFile={handleDeleteFile}
+        />
       </div>
 
       {/* Messages */}
