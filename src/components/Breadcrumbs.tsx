@@ -45,7 +45,7 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
   }
 
   return (
-    <div className="flex items-center space-x-2 text-sm">
+    <div className="flex items-center space-x-2 text-sm overflow-x-auto scrollbar-hide min-w-0 flex-1">
       {path.map((item, index) => (
         <React.Fragment key={item.id}>
           {index > 0 && <span className="text-gray-400 select-none">/</span>}

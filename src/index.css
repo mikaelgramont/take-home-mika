@@ -132,6 +132,21 @@
   height: 100vh;
 }
 
+/* Mobile responsive layout - stack tree above content */
+@media (max-width: 768px) {
+  .grid-areas-layout {
+    grid-template-rows: 5rem 7.5rem auto 1fr 2rem;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "masthead"
+      "toolbar"
+      "tree"
+      "content"
+      "messages";
+  }
+
+}
+
 .grid-area-masthead {
   grid-area: masthead;
 }

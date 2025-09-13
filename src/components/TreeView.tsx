@@ -5,11 +5,11 @@ import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const treeVariants = cva(
-  "group hover:before:opacity-100 before:absolute before:rounded-lg before:left-0 px-2 before:w-full before:opacity-0 before:bg-accent/70 before:h-[2rem] before:-z-10"
+  "group hover:before:opacity-100 before:absolute before:rounded-lg before:left-0 px-2 before:w-full before:opacity-0 before:bg-blue-50 dark:before:bg-blue-900/20 before:h-[2rem] before:-z-10 cursor-pointer"
 );
 
 const selectedTreeVariants = cva(
-  "before:opacity-100 before:bg-accent/70 text-accent-foreground"
+  "before:opacity-100 before:bg-blue-100 dark:before:bg-blue-900/30 bg-blue-100"
 );
 
 const dragOverVariants = cva(
@@ -508,7 +508,7 @@ const AccordionTrigger = React.forwardRef<
       )}
       {...props}
     >
-      <ChevronRight className="h-4 w-4 shrink-0 transition-transform duration-200 text-accent-foreground/50 mr-1" />
+      <ChevronRight className="h-4 w-4 shrink-0 transition-transform duration-200 text-gray-500 dark:text-gray-400 mr-1" />
       {children}
     </AccordionPrimitive.Trigger>
   </AccordionPrimitive.Header>

@@ -338,12 +338,12 @@ function DataRoomApp() {
       </div>
 
       {/* Toolbar */}
-      <div className="grid-area-toolbar flex flex-row flex-wrap bg-white border-b border-gray-200 items-center justify-between px-6">
+      <div className="grid-area-toolbar flex flex-row flex-wrap gap-2 md:gap-4 bg-white border-b border-gray-200 items-center justify-between px-6 overflow-x-hidden">
         <Breadcrumbs
           selectedItem={selectedItem}
           onNavigate={handleItemSelect}
         />
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 justify-center md:justify-end w-full md:w-auto">
           <button
             onClick={() => setUploadDialogOpen(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
@@ -362,7 +362,7 @@ function DataRoomApp() {
       </div>
 
       {/* Tree View */}
-      <div className="grid-area-tree bg-gray-50 border-r border-gray-200 p-4 overflow-y-auto">
+      <div className="grid-area-tree bg-gray-50 border-r border-gray-200 md:border-b-0 border-b-gray-200 max-h-[40vh] md:max-h-none p-4 overflow-y-auto">
         <DataRoomTreeView
           root={dataRoom.rootFolder}
           onItemSelect={handleItemSelect}

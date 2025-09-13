@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { TreeView, type TreeDataItem } from "./tree-view";
+import { TreeView, type TreeDataItem } from "./TreeView.tsx";
 import type { Folder, DataRoomItem } from "../types/index.ts";
-import { FolderIcon, FileIcon, FolderOpenIcon } from "lucide-react";
+import {
+  FolderIcon,
+  FileIcon,
+  FolderOpenIcon,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 interface DataRoomTreeViewProps {
   root: Folder;
@@ -19,6 +25,7 @@ const DataRoomTreeView: React.FC<DataRoomTreeViewProps> = ({
   className,
 }) => {
   const [expandedItemIds, setExpandedItemIds] = useState<string[]>([]);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Update expanded items when selectedItemId changes
   useEffect(() => {
@@ -120,18 +127,76 @@ const DataRoomTreeView: React.FC<DataRoomTreeViewProps> = ({
     }
   };
 
+  // Find the selected item by ID for collapsed view
+  const findSelectedItem = (): DataRoomItem | null => {
+    if (!selectedItemId) return null;
+
+    const findItemById = (
+      items: DataRoomItem[],
+      id: string
+    ): DataRoomItem | null => {
+      for (const dataItem of items) {
+        if (dataItem.id === id) {
+          return dataItem;
+        }
+        if (dataItem.type === "folder") {
+          const found = findItemById((dataItem as Folder).children, id);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    return findItemById([root], selectedItemId);
+  };
+
+  const selectedItem = findSelectedItem();
+
   return (
-    <TreeView
-      data={treeData}
-      onSelectChange={handleSelectChange}
-      initialSelectedItemId={selectedItemId}
-      expandAll={expandAll}
-      expandedItemIds={expandedItemIds}
-      onExpandedChange={setExpandedItemIds}
-      defaultNodeIcon={FolderIcon}
-      defaultLeafIcon={FileIcon}
-      className={className}
-    />
+    <div className={`relative ${className || ""}`}>
+      {/* Collapse/Expand Button - Mobile Only */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className="absolute top-2 right-2 z-10 p-1.5 rounded-md bg-white border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors md:hidden"
+        title={isCollapsed ? "Expand tree view" : "Collapse tree view"}
+      >
+        {isCollapsed ? (
+          <ChevronRight size={16} className="text-gray-600" />
+        ) : (
+          <ChevronLeft size={16} className="text-gray-600" />
+        )}
+      </button>
+
+      {/* Collapsed View */}
+      {isCollapsed ? (
+        <div className="p-4 bg-gray-50 rounded-md border border-gray-200  flex items-center justify-center">
+          {selectedItem ? (
+            <div className="flex items-center gap-2 text-gray-700">
+              {selectedItem.type === "folder" ? (
+                <FolderIcon size={20} className="text-blue-600" />
+              ) : (
+                <FileIcon size={20} className="text-gray-600" />
+              )}
+              <span className="font-medium">{selectedItem.name}</span>
+            </div>
+          ) : (
+            <div className="text-gray-500 text-sm">No item selected</div>
+          )}
+        </div>
+      ) : (
+        /* Expanded View */
+        <TreeView
+          data={treeData}
+          onSelectChange={handleSelectChange}
+          initialSelectedItemId={selectedItemId}
+          expandAll={expandAll}
+          expandedItemIds={expandedItemIds}
+          onExpandedChange={setExpandedItemIds}
+          defaultNodeIcon={FolderIcon}
+          defaultLeafIcon={FileIcon}
+        />
+      )}
+    </div>
   );
 };
 
