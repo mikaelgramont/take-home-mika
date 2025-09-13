@@ -7,18 +7,25 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { SUPPORTED_FILE_TYPES, type SupportedFileType } from "@/types";
+import {
+  SUPPORTED_FILE_TYPES,
+  type SupportedFileType,
+  type DataRoomItem,
+} from "@/types";
+import { validateFileName, validateFileNotEmpty } from "@/lib/validationUtils";
 
 interface UploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpload: (files: File[]) => Promise<void>;
+  existingItems?: DataRoomItem[];
 }
 
 export default function UploadDialog({
   open,
   onOpenChange,
   onUpload,
+  existingItems = [],
 }: UploadDialogProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -47,6 +54,20 @@ export default function UploadDialog({
     const errors: string[] = [];
 
     Array.from(files).forEach((file) => {
+      // Check for empty files
+      const emptyError = validateFileNotEmpty(file);
+      if (emptyError) {
+        errors.push(`${file.name}: ${emptyError}`);
+        return;
+      }
+
+      // Validate file name
+      const nameErrors = validateFileName(file.name, existingItems);
+      if (nameErrors.length > 0) {
+        errors.push(`${file.name}: ${nameErrors.join(", ")}`);
+        return;
+      }
+
       const fileType = getFileTypeFromFile(file);
 
       if (!fileType) {

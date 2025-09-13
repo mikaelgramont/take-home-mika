@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Folder } from "@/types";
+import type { Folder, DataRoomItem } from "@/types";
 import {
   calculateFolderSize,
   countDirectChildren,
@@ -15,6 +15,7 @@ interface FolderContentProps {
   isRootFolder: boolean;
   onRename: (folderId: string, newName: string) => void;
   onDelete: (folderId: string) => void;
+  existingItems?: DataRoomItem[];
 }
 
 export default function FolderContent({
@@ -22,6 +23,7 @@ export default function FolderContent({
   isRootFolder,
   onRename,
   onDelete,
+  existingItems = [],
 }: FolderContentProps) {
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -110,6 +112,8 @@ export default function FolderContent({
         currentName={folder.name}
         itemType="folder"
         onConfirm={handleRenameConfirm}
+        existingItems={existingItems}
+        itemId={folder.id}
       />
 
       <DeleteDialog

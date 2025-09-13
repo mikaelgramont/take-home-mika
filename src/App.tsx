@@ -66,6 +66,18 @@ function DataRoomApp() {
     }
   }, [path, dataRoom]);
 
+  // Get current folder's children for validation
+  const getCurrentFolderChildren = (): DataRoomItem[] => {
+    if (!dataRoom) return [];
+
+    if (selectedItem && selectedItem.type === "folder") {
+      return selectedItem.children;
+    }
+
+    // If no folder is selected, return root folder children
+    return dataRoom.rootFolder.children;
+  };
+
   const handleItemSelect = (item: DataRoomItem | null) => {
     if (!dataRoom) {
       return;
@@ -368,6 +380,7 @@ function DataRoomApp() {
           onDeleteFolder={handleDeleteFolder}
           onRenameFile={handleRenameFile}
           onDeleteFile={handleDeleteFile}
+          existingItems={getCurrentFolderChildren()}
         />
       </div>
 
@@ -383,6 +396,7 @@ function DataRoomApp() {
         open={newFolderDialogOpen}
         onOpenChange={setNewFolderDialogOpen}
         onConfirm={handleNewFolder}
+        existingItems={getCurrentFolderChildren()}
       />
 
       {/* Upload Dialog */}
@@ -390,6 +404,7 @@ function DataRoomApp() {
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         onUpload={handleUpload}
+        existingItems={getCurrentFolderChildren()}
       />
     </div>
   );

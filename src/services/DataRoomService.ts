@@ -1,6 +1,12 @@
 import type { DataRoom, DataRoomItem, File, Folder } from "../types/index.ts";
 import { SUPPORTED_FILE_TYPES } from "../types/index.ts";
 import { indexedDBFileService } from "./IndexedDBFileService";
+import {
+  validateFolderName,
+  validateFileName,
+  validateFolderDepth,
+  validateFileNotEmpty,
+} from "../lib/validationUtils";
 
 // Service interface for future network implementation
 export interface IDataRoomService {
@@ -480,6 +486,27 @@ startxref
       throw new Error("DataRoom not found. Please initialize it first.");
     }
 
+    // Validate folder depth
+    const depthError = validateFolderDepth(
+      parentId || null,
+      dataRoom.rootFolder
+    );
+    if (depthError) {
+      throw new Error(depthError);
+    }
+
+    // Get existing items in the target folder
+    const existingItems = parentId
+      ? (this.findItemById([dataRoom.rootFolder], parentId) as Folder)
+          ?.children || []
+      : dataRoom.rootFolder.children;
+
+    // Validate folder name
+    const nameErrors = validateFolderName(name, existingItems);
+    if (nameErrors.length > 0) {
+      throw new Error(nameErrors.join(", "));
+    }
+
     const now = new Date();
     const folder: Folder = {
       id: this.generateId(),
@@ -536,6 +563,18 @@ startxref
       throw new Error(`Folder with id ${folderId} not found`);
     }
 
+    // Get existing items in the same parent folder
+    const parentFolder = folder.parentId
+      ? (this.findItemById([dataRoom.rootFolder], folder.parentId) as Folder)
+      : dataRoom.rootFolder;
+    const existingItems = parentFolder?.children || [];
+
+    // Validate folder name
+    const nameErrors = validateFolderName(name, existingItems, folderId);
+    if (nameErrors.length > 0) {
+      throw new Error(nameErrors.join(", "));
+    }
+
     folder.name = name;
     folder.updatedAt = new Date();
     dataRoom.updatedAt = new Date();
@@ -577,6 +616,24 @@ startxref
 
     if (!dataRoom) {
       throw new Error("DataRoom not found. Please initialize it first.");
+    }
+
+    // Validate file is not empty
+    const emptyError = validateFileNotEmpty(file);
+    if (emptyError) {
+      throw new Error(emptyError);
+    }
+
+    // Get existing items in the target folder
+    const existingItems = parentId
+      ? (this.findItemById([dataRoom.rootFolder], parentId) as Folder)
+          ?.children || []
+      : dataRoom.rootFolder.children;
+
+    // Validate file name
+    const nameErrors = validateFileName(file.name, existingItems);
+    if (nameErrors.length > 0) {
+      throw new Error(nameErrors.join(", "));
     }
 
     // Determine file type from file extension
@@ -684,6 +741,18 @@ startxref
     const file = this.findItemById([dataRoom.rootFolder], fileId) as File;
     if (!file || file.type !== "file") {
       throw new Error(`File with id ${fileId} not found`);
+    }
+
+    // Get existing items in the same parent folder
+    const parentFolder = file.parentId
+      ? (this.findItemById([dataRoom.rootFolder], file.parentId) as Folder)
+      : dataRoom.rootFolder;
+    const existingItems = parentFolder?.children || [];
+
+    // Validate file name
+    const nameErrors = validateFileName(name, existingItems, fileId, file.name);
+    if (nameErrors.length > 0) {
+      throw new Error(nameErrors.join(", "));
     }
 
     file.name = name;

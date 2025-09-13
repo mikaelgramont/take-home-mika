@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { File } from "@/types";
+import type { File, DataRoomItem } from "@/types";
 import {
   formatBytes,
   getFileTypeDisplayName,
@@ -15,12 +15,14 @@ interface FileContentProps {
   file: File;
   onRename: (fileId: string, newName: string) => void;
   onDelete: (fileId: string) => void;
+  existingItems?: DataRoomItem[];
 }
 
 export default function FileContent({
   file,
   onRename,
   onDelete,
+  existingItems = [],
 }: FileContentProps) {
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -172,6 +174,8 @@ export default function FileContent({
         currentName={file.name}
         itemType="file"
         onConfirm={handleRenameConfirm}
+        existingItems={existingItems}
+        itemId={file.id}
       />
 
       <DeleteDialog

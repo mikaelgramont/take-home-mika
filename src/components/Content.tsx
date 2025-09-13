@@ -9,6 +9,7 @@ interface ContentProps {
   onDeleteFolder: (folderId: string) => void;
   onRenameFile: (fileId: string, newName: string) => void;
   onDeleteFile: (fileId: string) => void;
+  existingItems?: DataRoomItem[];
 }
 
 export default function Content({
@@ -18,6 +19,7 @@ export default function Content({
   onDeleteFolder,
   onRenameFile,
   onDeleteFile,
+  existingItems = [],
 }: ContentProps) {
   return (
     <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
@@ -38,12 +40,14 @@ export default function Content({
               isRootFolder={selectedItem.id === rootFolderId}
               onRename={onRenameFolder}
               onDelete={onDeleteFolder}
+              existingItems={existingItems}
             />
           ) : (
             <FileContent
               file={selectedItem as File}
               onRename={onRenameFile}
               onDelete={onDeleteFile}
+              existingItems={existingItems}
             />
           )}
         </div>
