@@ -22,3 +22,5 @@ I'll be adding notes here as I build this.
 8. Rename and delete. The buttons for these still need to be styled a bit better, but we're using ShadCDN Dialogs.
 
 9. Added icons
+
+10. Implemented "New Folder"

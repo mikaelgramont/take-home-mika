@@ -1,5 +1,5 @@
 export {
-  IDataRoomService,
   LocalStorageDataRoomService,
   dataRoomService,
 } from "./DataRoomService";
+export type { IDataRoomService } from "./DataRoomService";

@@ -1,10 +1,4 @@
-import type {
-  DataRoom,
-  DataRoomItem,
-  File,
-  Folder,
-  BaseEntity,
-} from "../types/index.ts";
+import type { DataRoom, DataRoomItem, File, Folder } from "../types/index.ts";
 
 // Service interface for future network implementation
 export interface IDataRoomService {
@@ -89,26 +83,6 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     return null;
   }
 
-  // Helper to find parent folder by ID
-  private findParentFolder(
-    items: DataRoomItem[],
-    targetId: string
-  ): Folder | null {
-    for (const item of items) {
-      if (item.type === "folder") {
-        if ((item as Folder).children.some((child) => child.id === targetId)) {
-          return item as Folder;
-        }
-        const found = this.findParentFolder(
-          (item as Folder).children,
-          targetId
-        );
-        if (found) return found;
-      }
-    }
-    return null;
-  }
-
   // Helper to remove item from parent folder
   private removeFromParent(items: DataRoomItem[], targetId: string): boolean {
     for (let i = 0; i < items.length; i++) {
@@ -118,28 +92,6 @@ export class LocalStorageDataRoomService implements IDataRoomService {
       }
       if (items[i].type === "folder") {
         if (this.removeFromParent((items[i] as Folder).children, targetId)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  // Helper to update item in nested structure
-  private updateItemInNested(
-    items: DataRoomItem[],
-    targetId: string,
-    updates: Partial<BaseEntity>
-  ): boolean {
-    for (const item of items) {
-      if (item.id === targetId) {
-        Object.assign(item, updates);
-        return true;
-      }
-      if (item.type === "folder") {
-        if (
-          this.updateItemInNested((item as Folder).children, targetId, updates)
-        ) {
           return true;
         }
       }
