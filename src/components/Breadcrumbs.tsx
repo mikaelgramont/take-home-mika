@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { dataRoomService } from "@/services/DataRoomService";
 import type { DataRoomItem } from "@/types";
 
@@ -11,10 +11,26 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
   selectedItem,
   onNavigate,
 }) => {
+  const [path, setPath] = useState<DataRoomItem[]>([]);
+
   // Get the path to the selected item using the rootFolder prop
-  const path = selectedItem
-    ? dataRoomService.getPathToItem(selectedItem.id)
-    : [];
+  useEffect(() => {
+    const getPath = async () => {
+      if (selectedItem) {
+        try {
+          const itemPath = await dataRoomService.getPathToItem(selectedItem.id);
+          setPath(itemPath);
+        } catch (error) {
+          console.error("Failed to get path to item:", error);
+          setPath([]);
+        }
+      } else {
+        setPath([]);
+      }
+    };
+
+    getPath();
+  }, [selectedItem]);
 
   const handleBreadcrumbClick = (item: DataRoomItem) => {
     onNavigate(item);

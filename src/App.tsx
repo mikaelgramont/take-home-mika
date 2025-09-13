@@ -27,13 +27,26 @@ function DataRoomApp() {
   const path = decodeURIComponent(rawPath);
 
   const navigate = useNavigate();
-  const [dataRoom, setDataRoom] = useState<DataRoom | null>(() =>
-    dataRoomService.initializeDataRoom()
-  );
+  const [dataRoom, setDataRoom] = useState<DataRoom | null>(null);
   const [selectedItem, setSelectedItem] = useState<DataRoomItem | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [newFolderDialogOpen, setNewFolderDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+
+  // Initialize DataRoom
+  useEffect(() => {
+    const initializeDataRoom = async () => {
+      try {
+        const initializedDataRoom = await dataRoomService.initializeDataRoom();
+        setDataRoom(initializedDataRoom);
+      } catch (error) {
+        console.error("Failed to initialize DataRoom:", error);
+        setError("Failed to initialize DataRoom");
+      }
+    };
+
+    initializeDataRoom();
+  }, []);
 
   // Update selectedItem based on URL path
   useEffect(() => {

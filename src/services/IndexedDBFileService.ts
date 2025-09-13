@@ -59,6 +59,40 @@ export class IndexedDBFileService {
     });
   }
 
+  async storeFileFromBuffer(
+    fileId: string,
+    name: string,
+    type: string,
+    size: number,
+    content: ArrayBuffer
+  ): Promise<void> {
+    const db = await this.initDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([this.storeName], "readwrite");
+      const store = transaction.objectStore(this.storeName);
+
+      const fileData: StoredFile = {
+        id: fileId,
+        name: name,
+        type: type,
+        size: size,
+        content: content,
+        uploadedAt: new Date(),
+      };
+
+      const request = store.put(fileData);
+
+      // Only resolve on transaction completion, not on individual request success
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(new Error("Transaction aborted"));
+
+      // Handle individual request errors
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   async getFile(fileId: string): Promise<ArrayBuffer | null> {
     const db = await this.initDB();
 

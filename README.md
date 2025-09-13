@@ -26,3 +26,5 @@ I'll be adding notes here as I build this.
 10. Implemented "New Folder"
 
 11. Implemented "File Upload". I had to change my approach for storing files in `localStorage` as `ArrayBuffers` as that was a little naive. Instead we're now storing the actual files in `IndexedDB` and pointing to them from the data in `localStorage`. Works well.
+
+12. Moved data population script into DataRoomService, and made it generate PDF files on the fly - all for the sake of a good experience on first page load
