@@ -11,6 +11,7 @@ import DataRoomTreeView from "@/components/DataRoomTreeView";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import Content from "@/components/Content";
 import NewFolderDialog from "@/components/NewFolderDialog";
+import UploadDialog from "@/components/UploadDialog";
 import { dataRoomService } from "@/services/DataRoomService";
 import {
   findItemByPath,
@@ -32,6 +33,7 @@ function DataRoomApp() {
   const [selectedItem, setSelectedItem] = useState<DataRoomItem | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [newFolderDialogOpen, setNewFolderDialogOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   // Update selectedItem based on URL path
   useEffect(() => {
@@ -246,6 +248,59 @@ function DataRoomApp() {
     }
   };
 
+  const handleUpload = async (files: File[]) => {
+    try {
+      if (!dataRoom) {
+        setError("No data room found");
+        return;
+      }
+
+      // Determine the parent folder for the uploaded files
+      let parentId: string | null = null;
+
+      if (selectedItem) {
+        if (selectedItem.type === "folder") {
+          // If current item is a folder, upload files inside it
+          parentId = selectedItem.id;
+        } else {
+          // If current item is a file, upload files in the file's parent
+          const parentFolder = findParentFolder(
+            selectedItem,
+            dataRoom.rootFolder
+          );
+          parentId = parentFolder?.id || null;
+        }
+      }
+      // If no selected item, upload at root level (parentId remains null)
+
+      // Upload all files
+      const uploadedFiles = [];
+      for (const file of files) {
+        const uploadedFile = await dataRoomService.uploadFile(file, parentId);
+        uploadedFiles.push(uploadedFile);
+      }
+
+      // Refresh the data room from storage
+      const updatedDataRoom = await dataRoomService.getDataRoom();
+      if (updatedDataRoom) {
+        setDataRoom(updatedDataRoom);
+
+        // Navigate to the first uploaded file
+        if (uploadedFiles.length > 0) {
+          const firstFile = uploadedFiles[0];
+          const filePath = getItemPath(firstFile, updatedDataRoom.rootFolder);
+          navigate(filePath);
+        }
+      }
+    } catch (err) {
+      setError(
+        `Failed to upload files: ${
+          err instanceof Error ? err.message : "Unknown error"
+        }`
+      );
+    }
+  };
+
   if (!dataRoom) {
     return <div>No data room!</div>;
   }
@@ -264,7 +319,10 @@ function DataRoomApp() {
           onNavigate={handleItemSelect}
         />
         <div className="flex items-center gap-4">
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2">
+          <button
+            onClick={() => setUploadDialogOpen(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
+          >
             <Upload size={16} />
             Upload
           </button>
@@ -312,6 +370,13 @@ function DataRoomApp() {
         open={newFolderDialogOpen}
         onOpenChange={setNewFolderDialogOpen}
         onConfirm={handleNewFolder}
+      />
+
+      {/* Upload Dialog */}
+      <UploadDialog
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        onUpload={handleUpload}
       />
     </div>
   );

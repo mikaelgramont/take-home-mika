@@ -1,4 +1,5 @@
 import type { DataRoom, DataRoomItem, File, Folder } from "../types/index.ts";
+import { SUPPORTED_FILE_TYPES } from "../types/index.ts";
 
 // Service interface for future network implementation
 export interface IDataRoomService {
@@ -265,6 +266,38 @@ export class LocalStorageDataRoomService implements IDataRoomService {
       throw new Error("DataRoom not found. Please initialize it first.");
     }
 
+    // Determine file type from file extension
+    const extension = file.name.toLowerCase().split(".").pop();
+    if (!extension) {
+      throw new Error("File must have an extension");
+    }
+
+    // Find matching file type configuration
+    let fileType: string | null = null;
+    for (const [key, config] of Object.entries(SUPPORTED_FILE_TYPES)) {
+      if (config.extension.toLowerCase() === `.${extension}`) {
+        fileType = key;
+        break;
+      }
+    }
+
+    if (!fileType) {
+      const supportedExtensions = Object.values(SUPPORTED_FILE_TYPES)
+        .map((config) => config.extension)
+        .join(", ");
+      throw new Error(
+        `Unsupported file type. Supported types: ${supportedExtensions}`
+      );
+    }
+
+    // Validate file size
+    const config =
+      SUPPORTED_FILE_TYPES[fileType as keyof typeof SUPPORTED_FILE_TYPES];
+    if (file.size > config.maxSize) {
+      const maxSizeMB = Math.round(config.maxSize / (1024 * 1024));
+      throw new Error(`File too large. Maximum size: ${maxSizeMB}MB`);
+    }
+
     const now = new Date();
     const fileItem: File = {
       id: this.generateId(),
@@ -273,7 +306,7 @@ export class LocalStorageDataRoomService implements IDataRoomService {
       createdAt: now,
       updatedAt: now,
       parentId: parentId || null,
-      fileType: "pdf", // For now, only PDFs are supported
+      fileType: fileType as keyof typeof SUPPORTED_FILE_TYPES,
       size: file.size,
       content: await file.arrayBuffer(),
     };

@@ -5,4 +5,5 @@ export { default as FileContent } from "./FileContent";
 export { default as RenameDialog } from "./RenameDialog";
 export { default as DeleteDialog } from "./DeleteDialog";
 export { default as NewFolderDialog } from "./NewFolderDialog";
+export { default as UploadDialog } from "./UploadDialog";
 export { TreeView, type TreeDataItem } from "./tree-view";
