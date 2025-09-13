@@ -51,7 +51,7 @@ export interface File extends BaseEntity {
   type: "file";
   fileType: SupportedFileType; // single source of truth
   size: number; // in bytes
-  content: ArrayBuffer; // stored in browser memory
+  fileId: string; // reference to IndexedDB storage
 }
 
 // Helper functions to get mimeType and extension

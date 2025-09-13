@@ -1,5 +1,6 @@
 import type { DataRoom, DataRoomItem, File, Folder } from "../types/index.ts";
 import { SUPPORTED_FILE_TYPES } from "../types/index.ts";
+import { indexedDBFileService } from "./IndexedDBFileService";
 
 // Service interface for future network implementation
 export interface IDataRoomService {
@@ -16,6 +17,7 @@ export interface IDataRoomService {
   // File operations
   uploadFile(file: globalThis.File, parentId?: string | null): Promise<File>;
   getFile(fileId: string): Promise<File | null>;
+  getFileContent(fileId: string): Promise<ArrayBuffer | null>;
   updateFileName(fileId: string, name: string): Promise<File>;
   deleteFile(fileId: string): Promise<void>;
 
@@ -299,6 +301,11 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     }
 
     const now = new Date();
+    const fileId = this.generateId();
+
+    // Store file in IndexedDB
+    await indexedDBFileService.storeFile(fileId, file);
+
     const fileItem: File = {
       id: this.generateId(),
       name: file.name,
@@ -308,7 +315,7 @@ export class LocalStorageDataRoomService implements IDataRoomService {
       parentId: parentId || null,
       fileType: fileType as keyof typeof SUPPORTED_FILE_TYPES,
       size: file.size,
-      content: await file.arrayBuffer(),
+      fileId: fileId, // Reference to IndexedDB
     };
 
     // Add to parent folder or root
@@ -349,6 +356,13 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     return file && file.type === "file" ? (file as File) : null;
   }
 
+  async getFileContent(fileId: string): Promise<ArrayBuffer | null> {
+    const file = await this.getFile(fileId);
+    if (!file) return null;
+
+    return indexedDBFileService.getFile(file.fileId);
+  }
+
   async updateFileName(fileId: string, name: string): Promise<File> {
     const dataRoom = this.getStoredDataRoom();
 
@@ -380,6 +394,9 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     if (!file || file.type !== "file") {
       throw new Error(`File with id ${fileId} not found`);
     }
+
+    // Delete from IndexedDB
+    await indexedDBFileService.deleteFile(file.fileId);
 
     // Remove from parent
     this.removeFromParent(dataRoom.rootFolder.children, fileId);

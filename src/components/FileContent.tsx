@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { File } from "@/types";
 import {
   formatBytes,
@@ -6,9 +6,10 @@ import {
   getFileMimeType,
 } from "@/lib/formatUtils";
 import { Button } from "./ui/button";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Loader2 } from "lucide-react";
 import RenameDialog from "./RenameDialog";
 import DeleteDialog from "./DeleteDialog";
+import { dataRoomService } from "@/services/DataRoomService";
 
 interface FileContentProps {
   file: File;
@@ -23,17 +24,44 @@ export default function FileContent({
 }: FileContentProps) {
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [fileContent, setFileContent] = useState<ArrayBuffer | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    console.error("An error occurred while loading file content:", error);
+  }, [error]);
 
   const fileTypeDisplayName = getFileTypeDisplayName(file);
   const mimeType = getFileMimeType(file);
 
+  // Load file content from IndexedDB
+  useEffect(() => {
+    const loadFileContent = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const content = await dataRoomService.getFileContent(file.id);
+        setFileContent(content);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load file content"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFileContent();
+  }, [file.id]);
+
   // Create a blob URL for the file content to display in iframe
-  const createBlobUrl = (file: File): string => {
-    const blob = new Blob([file.content], { type: mimeType });
+  const createBlobUrl = (content: ArrayBuffer): string => {
+    const blob = new Blob([content], { type: mimeType });
     return URL.createObjectURL(blob);
   };
 
-  const blobUrl = createBlobUrl(file);
+  const blobUrl = fileContent ? createBlobUrl(fileContent) : null;
 
   const handleRename = () => {
     setRenameDialogOpen(true);
@@ -107,15 +135,34 @@ export default function FileContent({
 
         <h4 className="text-sm font-medium text-gray-500 mb-2">Preview</h4>
         <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <iframe
-            src={blobUrl}
-            className="w-full h-96"
-            title={`Preview of ${file.name}`}
-            onLoad={() => {
-              // Clean up the blob URL after the iframe loads
-              setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-            }}
-          />
+          {loading ? (
+            <div className="flex items-center justify-center h-96 bg-gray-50">
+              <div className="flex items-center gap-2 text-gray-600">
+                <Loader2 size={20} className="animate-spin" />
+                Loading file content...
+              </div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-96 bg-red-50">
+              <div className="text-center">
+                <p className="text-red-600 font-medium">Failed to load file</p>
+              </div>
+            </div>
+          ) : blobUrl ? (
+            <iframe
+              src={blobUrl}
+              className="w-full h-96"
+              title={`Preview of ${file.name}`}
+              onLoad={() => {
+                // Clean up the blob URL after the iframe loads
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+              }}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-96 bg-gray-50">
+              <p className="text-gray-500">No preview available</p>
+            </div>
+          )}
         </div>
       </div>
 
