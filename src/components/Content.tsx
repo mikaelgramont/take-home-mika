@@ -4,6 +4,7 @@ import FileContent from "./FileContent";
 
 interface ContentProps {
   selectedItem: DataRoomItem | null;
+  rootFolderId: string;
   onRenameFolder: (folderId: string, newName: string) => void;
   onDeleteFolder: (folderId: string) => void;
   onRenameFile: (fileId: string, newName: string) => void;
@@ -12,6 +13,7 @@ interface ContentProps {
 
 export default function Content({
   selectedItem,
+  rootFolderId,
   onRenameFolder,
   onDeleteFolder,
   onRenameFile,
@@ -33,6 +35,7 @@ export default function Content({
           {selectedItem.type === "folder" ? (
             <FolderContent
               folder={selectedItem as Folder}
+              isRootFolder={selectedItem.id === rootFolderId}
               onRename={onRenameFolder}
               onDelete={onDeleteFolder}
             />

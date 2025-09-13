@@ -6,17 +6,20 @@ import {
   formatBytes,
 } from "@/lib/formatUtils";
 import { Button } from "./ui/button";
+import { Edit, Trash2 } from "lucide-react";
 import RenameDialog from "./RenameDialog";
 import DeleteDialog from "./DeleteDialog";
 
 interface FolderContentProps {
   folder: Folder;
+  isRootFolder: boolean;
   onRename: (folderId: string, newName: string) => void;
   onDelete: (folderId: string) => void;
 }
 
 export default function FolderContent({
   folder,
+  isRootFolder,
   onRename,
   onDelete,
 }: FolderContentProps) {
@@ -76,16 +79,30 @@ export default function FolderContent({
         </div>
       </div>
 
-      <div className="border-t pt-4">
-        <div className="flex gap-2">
-          <Button onClick={handleRename} variant="outline" size="sm">
-            Rename
-          </Button>
-          <Button onClick={handleDelete} variant="destructive" size="sm">
-            Delete
-          </Button>
+      {!isRootFolder && (
+        <div className="border-t pt-4">
+          <div className="flex gap-2">
+            <Button
+              onClick={handleRename}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Edit size={14} />
+              Rename
+            </Button>
+            <Button
+              onClick={handleDelete}
+              variant="destructive"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Trash2 size={14} />
+              Delete
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       <RenameDialog
         open={renameDialogOpen}

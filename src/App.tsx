@@ -6,6 +6,7 @@ import {
   useParams,
   useNavigate,
 } from "react-router-dom";
+import { Upload, FolderPlus } from "lucide-react";
 import DataRoomTreeView from "@/components/DataRoomTreeView";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import Content from "@/components/Content";
@@ -210,10 +211,12 @@ function DataRoomApp() {
           onNavigate={handleItemSelect}
         />
         <div className="flex items-center gap-4">
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+          <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2">
+            <Upload size={16} />
             Upload
           </button>
-          <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+          <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center gap-2">
+            <FolderPlus size={16} />
             New Folder
           </button>
         </div>
@@ -233,6 +236,7 @@ function DataRoomApp() {
       <div className="grid-area-content bg-white p-6 overflow-y-auto">
         <Content
           selectedItem={selectedItem}
+          rootFolderId={dataRoom.rootFolder.id}
           onRenameFolder={handleRenameFolder}
           onDeleteFolder={handleDeleteFolder}
           onRenameFile={handleRenameFile}

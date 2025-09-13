@@ -6,6 +6,7 @@ import {
   getFileMimeType,
 } from "@/lib/formatUtils";
 import { Button } from "./ui/button";
+import { Edit, Trash2 } from "lucide-react";
 import RenameDialog from "./RenameDialog";
 import DeleteDialog from "./DeleteDialog";
 
@@ -84,10 +85,22 @@ export default function FileContent({
         </div>
 
         <div className="flex gap-2 mb-4">
-          <Button onClick={handleRename} variant="outline" size="sm">
+          <Button
+            onClick={handleRename}
+            variant="outline"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Edit size={14} />
             Rename
           </Button>
-          <Button onClick={handleDelete} variant="destructive" size="sm">
+          <Button
+            onClick={handleDelete}
+            variant="destructive"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <Trash2 size={14} />
             Delete
           </Button>
         </div>

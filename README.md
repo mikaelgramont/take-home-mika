@@ -20,3 +20,5 @@ I'll be adding notes here as I build this.
 7. Made the URL the source of truth for current path
 
 8. Rename and delete. The buttons for these still need to be styled a bit better, but we're using ShadCDN Dialogs.
+
+9. Added icons
