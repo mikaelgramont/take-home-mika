@@ -36,6 +36,7 @@ export interface IDataRoomService {
 // Local storage implementation
 export class LocalStorageDataRoomService implements IDataRoomService {
   private readonly STORAGE_KEY = "dataroom_data";
+  private isPopulating = false;
 
   // Helper methods for local storage
   private async getStoredDataRoom(): Promise<DataRoom | null> {
@@ -43,6 +44,19 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     if (!data) {
       // Populate with sample data if no data exists
       // This is only to save us time in the development process, you wouldn't run this in prod.
+      if (this.isPopulating) {
+        // Wait for the ongoing population to complete
+        while (this.isPopulating) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        // Try to get the data again after population is complete
+        const populatedData = localStorage.getItem(this.STORAGE_KEY);
+        if (!populatedData) return null;
+        const parsed = JSON.parse(populatedData);
+        this.convertDatesToObjects(parsed);
+        return parsed;
+      }
+
       await this.populateDataRoom();
       const populatedData = localStorage.getItem(this.STORAGE_KEY);
       if (!populatedData) return null;
@@ -140,6 +154,22 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     return { totalFiles, totalSize };
   }
 
+  // Helper to recursively collect all file IDs from a folder
+  private collectFileIds(folder: Folder): string[] {
+    const fileIds: string[] = [];
+
+    for (const child of folder.children) {
+      if (child.type === "file") {
+        fileIds.push((child as File).fileId);
+      } else {
+        // Recursively collect from subfolders
+        fileIds.push(...this.collectFileIds(child as Folder));
+      }
+    }
+
+    return fileIds;
+  }
+
   // Helper to create mock PDF content with title
   private createMockPdfContent(title: string): ArrayBuffer {
     // Create a more realistic PDF with actual content
@@ -230,6 +260,11 @@ startxref
 
   // Helper to populate DataRoom with sample data
   private async populateDataRoom(): Promise<void> {
+    if (this.isPopulating) {
+      return; // Already populating, skip
+    }
+
+    this.isPopulating = true;
     try {
       // Clear existing data
       localStorage.removeItem(this.STORAGE_KEY);
@@ -438,6 +473,8 @@ startxref
     } catch (error) {
       console.error("❌ Error populating DataRoom:", error);
       throw error;
+    } finally {
+      this.isPopulating = false;
     }
   }
 
@@ -593,6 +630,19 @@ startxref
     const folder = this.findItemById([dataRoom.rootFolder], folderId) as Folder;
     if (!folder || folder.type !== "folder") {
       throw new Error(`Folder with id ${folderId} not found`);
+    }
+
+    // Collect all file IDs from the folder and its subfolders
+    const fileIds = this.collectFileIds(folder);
+
+    // Delete all files from IndexedDB
+    for (const fileId of fileIds) {
+      try {
+        await indexedDBFileService.deleteFile(fileId);
+      } catch (error) {
+        console.warn(`Failed to delete file ${fileId} from IndexedDB:`, error);
+        // Continue with other files even if one fails
+      }
     }
 
     // Remove from parent

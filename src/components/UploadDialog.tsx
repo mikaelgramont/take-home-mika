@@ -60,53 +60,54 @@ export default function UploadDialog({
     return null;
   };
 
-  const validateFiles = (
-    files: FileList
-  ): { valid: File[]; errors: string[] } => {
-    const validFiles: File[] = [];
-    const errors: string[] = [];
+  const validateFiles = useCallback(
+    (files: FileList): { valid: File[]; errors: string[] } => {
+      const validFiles: File[] = [];
+      const errors: string[] = [];
 
-    Array.from(files).forEach((file) => {
-      // Check for empty files
-      const emptyError = validateFileNotEmpty(file);
-      if (emptyError) {
-        errors.push(`${file.name}: ${emptyError}`);
-        return;
-      }
+      Array.from(files).forEach((file) => {
+        // Check for empty files
+        const emptyError = validateFileNotEmpty(file);
+        if (emptyError) {
+          errors.push(`${file.name}: ${emptyError}`);
+          return;
+        }
 
-      // Validate file name
-      const nameErrors = validateFileName(file.name, existingItems);
-      if (nameErrors.length > 0) {
-        errors.push(`${file.name}: ${nameErrors.join(", ")}`);
-        return;
-      }
+        // Validate file name
+        const nameErrors = validateFileName(file.name, existingItems);
+        if (nameErrors.length > 0) {
+          errors.push(`${file.name}: ${nameErrors.join(", ")}`);
+          return;
+        }
 
-      const fileType = getFileTypeFromFile(file);
+        const fileType = getFileTypeFromFile(file);
 
-      if (!fileType) {
-        const supportedExtensions = Object.values(SUPPORTED_FILE_TYPES)
-          .map((config) => config.extension)
-          .join(", ");
-        errors.push(
-          `${file.name}: Unsupported file type. Supported types: ${supportedExtensions}`
-        );
-        return;
-      }
+        if (!fileType) {
+          const supportedExtensions = Object.values(SUPPORTED_FILE_TYPES)
+            .map((config) => config.extension)
+            .join(", ");
+          errors.push(
+            `${file.name}: Unsupported file type. Supported types: ${supportedExtensions}`
+          );
+          return;
+        }
 
-      const config = SUPPORTED_FILE_TYPES[fileType];
-      if (file.size > config.maxSize) {
-        const maxSizeMB = Math.round(config.maxSize / (1024 * 1024));
-        errors.push(
-          `${file.name}: File too large. Maximum size: ${maxSizeMB}MB`
-        );
-        return;
-      }
+        const config = SUPPORTED_FILE_TYPES[fileType];
+        if (file.size > config.maxSize) {
+          const maxSizeMB = Math.round(config.maxSize / (1024 * 1024));
+          errors.push(
+            `${file.name}: File too large. Maximum size: ${maxSizeMB}MB`
+          );
+          return;
+        }
 
-      validFiles.push(file);
-    });
+        validFiles.push(file);
+      });
 
-    return { valid: validFiles, errors };
-  };
+      return { valid: validFiles, errors };
+    },
+    [existingItems]
+  );
 
   const handleFiles = useCallback(
     async (files: FileList) => {
@@ -134,7 +135,7 @@ export default function UploadDialog({
         setUploading(false);
       }
     },
-    [onUpload, onOpenChange]
+    [onUpload, onOpenChange, validateFiles]
   );
 
   const handleDrop = useCallback(

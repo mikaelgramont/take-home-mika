@@ -10,6 +10,7 @@ export const MAX_NAME_LENGTH = 255;
  * Validates if a name contains only ASCII characters
  */
 export function isAsciiOnly(name: string): boolean {
+  // eslint-disable-next-line no-control-regex
   return /^[\x00-\x7F]*$/.test(name);
 }
 
