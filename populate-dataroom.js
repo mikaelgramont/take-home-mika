@@ -23,7 +23,7 @@ function createSampleDataRoom() {
   // Create root folder
   const rootFolder = {
     id: generateId(),
-    name: "Acme Corp Data Room",
+    name: "ACME",
     type: "folder",
     createdAt: new Date(baseTime - 86400000), // 1 day ago
     updatedAt: now,
@@ -250,23 +250,6 @@ function populateDataRoom() {
     const sampleDataRoom = createSampleDataRoom();
     localStorage.setItem("dataroom_data", JSON.stringify(sampleDataRoom));
 
-    console.log("✅ DataRoom populated successfully!");
-    console.log("📊 Sample data includes:");
-    console.log(`   - ${sampleDataRoom.totalFiles} files`);
-    console.log(
-      `   - ${(sampleDataRoom.totalSize / 1024 / 1024).toFixed(
-        2
-      )} MB total size`
-    );
-    console.log("📁 Folder structure:");
-    console.log("   - Acme Corp Data Room (root)");
-    console.log("     ├── Financial Documents (3 files)");
-    console.log("     ├── Legal Documents");
-    console.log("     │   └── Contracts (3 files)");
-    console.log("     ├── Due Diligence (2 files)");
-    console.log("     ├── Market Analysis.pdf");
-    console.log("     └── Executive Summary.pdf");
-
     return sampleDataRoom;
   } catch (error) {
     console.error("❌ Error populating DataRoom:", error);
@@ -277,7 +260,6 @@ function populateDataRoom() {
 // Function to clear DataRoom data
 function clearDataRoom() {
   localStorage.removeItem("dataroom_data");
-  console.log("🗑️ DataRoom data cleared from localStorage");
 }
 
 // Export functions for use
@@ -289,12 +271,7 @@ if (typeof window !== "undefined") {
 
 // Auto-run if this script is executed directly
 if (typeof window !== "undefined" && window.location) {
-  console.log("🚀 DataRoom Population Script Loaded");
-  console.log("📝 Available functions:");
-  console.log("   - populateDataRoom() - Populate with sample data");
-  console.log("   - clearDataRoom() - Clear all data");
-  console.log("   - createSampleDataRoom() - Create sample data object");
-  console.log("\n💡 Run populateDataRoom() to get started!");
+  // Script loaded
 }
 
 // If running in Node.js environment (for testing)

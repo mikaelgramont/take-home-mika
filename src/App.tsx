@@ -1,18 +1,61 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useParams,
+  useNavigate,
+} from "react-router-dom";
 import DataRoomTreeView from "@/components/DataRoomTreeView";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { dataRoomService } from "@/services/DataRoomService";
-import type { DataRoomItem, File, Folder } from "@/types";
+import { findItemByPath, getItemPath } from "@/lib/pathUtils";
+import type { DataRoomItem, File, Folder, DataRoom } from "@/types";
 
-function App() {
-  const dataRoom = dataRoomService.initializeDataRoom();
+function DataRoomApp() {
+  const { "*": rawPath = "/" } = useParams<{ "*"?: string }>();
+  // Decode the path parameter to handle URL encoding
+  const path = decodeURIComponent(rawPath);
+
+  const navigate = useNavigate();
+  const [dataRoom] = useState<DataRoom | null>(() =>
+    dataRoomService.initializeDataRoom()
+  );
   const [selectedItem, setSelectedItem] = useState<DataRoomItem | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Update selectedItem based on URL path
+  useEffect(() => {
+    if (!dataRoom) {
+      setError("No data room found");
+      return;
+    }
+
+    const item = findItemByPath(dataRoom.rootFolder, path);
+
+    if (item) {
+      setSelectedItem(item);
+      setError(null);
+    } else {
+      setSelectedItem(null);
+      setError(`Path "${path}" not found`);
+    }
+  }, [path, dataRoom]);
 
   const handleItemSelect = (item: DataRoomItem | null) => {
-    setSelectedItem(item);
+    if (!dataRoom) {
+      return;
+    }
+
+    if (item) {
+      const itemPath = getItemPath(item, dataRoom.rootFolder);
+      navigate(itemPath);
+    } else {
+      navigate("/");
+    }
   };
 
   if (!dataRoom) {
-    // TODO: log error, show a message to the user
     return <div>No data room!</div>;
   }
 
@@ -24,7 +67,11 @@ function App() {
       </div>
 
       {/* Toolbar */}
-      <div className="grid-area-toolbar bg-white border-b border-gray-200 flex items-center px-6">
+      <div className="grid-area-toolbar flex flex-row flex-wrap bg-white border-b border-gray-200 items-center justify-between px-6">
+        <Breadcrumbs
+          selectedItem={selectedItem}
+          onNavigate={handleItemSelect}
+        />
         <div className="flex items-center gap-4">
           <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
             Upload File
@@ -44,6 +91,7 @@ function App() {
           <DataRoomTreeView
             root={dataRoom.rootFolder}
             onItemSelect={handleItemSelect}
+            selectedItemId={selectedItem?.id}
             expandAll={false}
           />
         </div>
@@ -94,9 +142,21 @@ function App() {
 
       {/* Messages */}
       <div className="grid-area-messages bg-gray-100 border-t border-gray-200 flex items-center px-6">
-        <p className="text-sm text-gray-600">Ready</p>
+        <p className={`text-sm ${error ? "text-red-600" : "text-gray-600"}`}>
+          {error || "Ready"}
+        </p>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/*" element={<DataRoomApp />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

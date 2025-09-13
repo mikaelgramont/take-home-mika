@@ -28,6 +28,7 @@ export interface IDataRoomService {
   // Utility operations
   getFolderContents(folderId?: string | null): Promise<DataRoomItem[]>;
   searchItems(query: string): Promise<DataRoomItem[]>;
+  getPathToItem(itemId: string): DataRoomItem[];
 }
 
 // Local storage implementation
@@ -40,17 +41,16 @@ export class LocalStorageDataRoomService implements IDataRoomService {
     if (!data) return null;
 
     const parsed = JSON.parse(data);
-    // Convert string dates back to Date objects
+    // Convert date strings back to Date objects
     this.convertDatesToObjects(parsed);
     return parsed;
   }
 
-  // Helper to recursively convert date strings to Date objects
+  // Helper to convert date strings back to Date objects recursively
   private convertDatesToObjects(obj: unknown): void {
     if (obj && typeof obj === "object" && obj !== null) {
       const objRecord = obj as Record<string, unknown>;
 
-      // Convert known date fields
       if (objRecord.createdAt && typeof objRecord.createdAt === "string") {
         objRecord.createdAt = new Date(objRecord.createdAt);
       }
@@ -186,7 +186,7 @@ export class LocalStorageDataRoomService implements IDataRoomService {
 
     const rootFolder: Folder = {
       id: this.generateId(),
-      name: "Root",
+      name: "/",
       type: "folder",
       createdAt: now,
       updatedAt: now,
@@ -462,6 +462,44 @@ export class LocalStorageDataRoomService implements IDataRoomService {
 
     searchInFolder(dataRoom.rootFolder.children);
     return results;
+  }
+
+  getPathToItem(itemId: string): DataRoomItem[] {
+    const dataRoom = this.getStoredDataRoom();
+    if (!dataRoom) {
+      return [];
+    }
+
+    // If looking for root folder
+    if (itemId === dataRoom.rootFolder.id) {
+      return [dataRoom.rootFolder];
+    }
+
+    const path: DataRoomItem[] = [];
+
+    // Helper function to find path recursively
+    const findPath = (items: DataRoomItem[], targetId: string): boolean => {
+      for (const item of items) {
+        if (item.id === targetId) {
+          path.push(item);
+          return true;
+        }
+        if (item.type === "folder") {
+          const folder = item as Folder;
+          if (findPath(folder.children, targetId)) {
+            path.unshift(item); // Add parent folder at the beginning
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    // Start from root folder
+    if (findPath(dataRoom.rootFolder.children, itemId)) {
+      path.unshift(dataRoom.rootFolder); // Add root folder at the beginning
+    }
+    return path;
   }
 }
 

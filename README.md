@@ -14,3 +14,7 @@ I'll be adding notes here as I build this.
 4. Installed ShadCDN by following the [docs](https://ui.shadcn.com/docs/installation/vite)
 
 5. Set up the layout through CSS grid.
+
+6. Added Breadcrumbs
+
+7. Made the URL the source of truth for current path

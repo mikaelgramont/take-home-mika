@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { TreeView, type TreeDataItem } from "./tree-view";
 import type { Folder, DataRoomItem } from "../types/index.ts";
 import { FolderIcon, FileIcon, FolderOpenIcon } from "lucide-react";
@@ -18,12 +18,55 @@ const DataRoomTreeView: React.FC<DataRoomTreeViewProps> = ({
   expandAll = false,
   className,
 }) => {
+  const [expandedItemIds, setExpandedItemIds] = useState<string[]>([]);
+
+  // Update expanded items when selectedItemId changes
+  useEffect(() => {
+    if (!selectedItemId) {
+      setExpandedItemIds([]);
+      return;
+    }
+
+    // Find path to selected item and expand it
+    const pathToSelected: string[] = [];
+
+    function findPath(
+      items: DataRoomItem[],
+      targetId: string,
+      currentPath: string[]
+    ): boolean {
+      for (const item of items) {
+        const newPath = [...currentPath, item.id];
+
+        if (item.id === targetId) {
+          // Found the target! Add all items in the path to expanded list
+          pathToSelected.push(...newPath);
+          return true;
+        }
+
+        if (item.type === "folder") {
+          const found = findPath((item as Folder).children, targetId, newPath);
+          if (found) {
+            // Target found in this branch, add current item to path
+            pathToSelected.push(item.id);
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    findPath([root], selectedItemId, []);
+    setExpandedItemIds(pathToSelected);
+  }, [selectedItemId, root]);
   // Convert DataRoomItem to TreeDataItem
   const convertToTreeDataItem = (item: DataRoomItem): TreeDataItem => {
     const baseItem: TreeDataItem = {
       id: item.id,
       name: item.name,
-      onClick: () => onItemSelect?.(item),
+      onClick: () => {
+        onItemSelect?.(item);
+      },
     };
 
     if (item.type === "folder") {
@@ -83,6 +126,8 @@ const DataRoomTreeView: React.FC<DataRoomTreeViewProps> = ({
       onSelectChange={handleSelectChange}
       initialSelectedItemId={selectedItemId}
       expandAll={expandAll}
+      expandedItemIds={expandedItemIds}
+      onExpandedChange={setExpandedItemIds}
       defaultNodeIcon={FolderIcon}
       defaultLeafIcon={FileIcon}
       className={className}

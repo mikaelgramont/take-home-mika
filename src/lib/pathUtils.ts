@@ -1,0 +1,109 @@
+import type { DataRoomItem, Folder } from "@/types";
+
+/**
+ * Converts a path string (e.g., "folder1/folder2/file.pdf") to an array of path segments
+ * Handles URL decoding for special characters like spaces (%20)
+ */
+export function parsePath(path: string): string[] {
+  if (!path || path === "/") {
+    return [];
+  }
+  return path
+    .split("/")
+    .filter((segment) => segment.length > 0)
+    .map((segment) => decodeURIComponent(segment));
+}
+
+/**
+ * Converts an array of path segments to a path string
+ * Handles URL encoding for special characters like spaces
+ */
+export function buildPath(segments: string[]): string {
+  if (segments.length === 0) {
+    return "/";
+  }
+  return "/" + segments.map((segment) => encodeURIComponent(segment)).join("/");
+}
+
+/**
+ * Finds an item by its path in the data room structure
+ */
+export function findItemByPath(
+  rootFolder: Folder,
+  path: string
+): DataRoomItem | null {
+  const segments = parsePath(path);
+
+  if (segments.length === 0) {
+    return rootFolder;
+  }
+
+  let current: DataRoomItem = rootFolder;
+
+  for (const segment of segments) {
+    if (current.type !== "folder") {
+      return null; // Can't navigate into a file
+    }
+
+    const folder = current as Folder;
+    const found = folder.children.find((child) => child.name === segment);
+
+    if (!found) {
+      return null; // Segment not found
+    }
+
+    current = found;
+  }
+
+  return current;
+}
+
+/**
+ * Gets the path string for a given item
+ */
+export function getItemPath(item: DataRoomItem, rootFolder: Folder): string {
+  if (item.id === rootFolder.id) {
+    return "/";
+  }
+
+  const path: string[] = [];
+  let current: DataRoomItem | null = item;
+
+  // Build path by traversing up to root
+  while (current && current.id !== rootFolder.id) {
+    path.unshift(current.name);
+
+    // Find parent
+    if (current.parentId) {
+      current = findItemById(rootFolder, current.parentId);
+    } else {
+      current = null;
+    }
+  }
+
+  return buildPath(path);
+}
+
+/**
+ * Helper function to find an item by ID in the folder structure
+ */
+function findItemById(rootFolder: Folder, id: string): DataRoomItem | null {
+  if (rootFolder.id === id) {
+    return rootFolder;
+  }
+
+  for (const child of rootFolder.children) {
+    if (child.id === id) {
+      return child;
+    }
+
+    if (child.type === "folder") {
+      const found = findItemById(child as Folder, id);
+      if (found) {
+        return found;
+      }
+    }
+  }
+
+  return null;
+}
