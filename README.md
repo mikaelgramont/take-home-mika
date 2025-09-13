@@ -12,3 +12,5 @@ I'll be adding notes here as I build this.
 3. Installed Tailwind with by following the [docs](https://tailwindcss.com/docs/installation/using-vite)
 
 4. Installed ShadCDN by following the [docs](https://ui.shadcn.com/docs/installation/vite)
+
+5. Set up the layout through CSS grid.

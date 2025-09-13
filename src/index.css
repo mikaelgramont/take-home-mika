@@ -119,3 +119,36 @@
   }
 }
 
+/* Custom CSS Grid Layout with named Areas - not handled natively by Tailwind so using regular CSS for that*/
+.grid-areas-layout {
+  display: grid;
+  grid-template-rows: 6rem 4rem 1fr 2rem;
+  grid-template-columns: 30% 1fr;
+  grid-template-areas: 
+    "masthead masthead"
+    "toolbar toolbar"
+    "tree content"
+    "messages messages";
+  height: 100vh;
+}
+
+.grid-area-masthead {
+  grid-area: masthead;
+}
+
+.grid-area-toolbar {
+  grid-area: toolbar;
+}
+
+.grid-area-tree {
+  grid-area: tree;
+}
+
+.grid-area-content {
+  grid-area: content;
+}
+
+.grid-area-messages {
+  grid-area: messages;
+}
+
