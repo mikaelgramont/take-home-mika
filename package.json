@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "deploy": "npm run build && cp dist/index.html dist/200.html && npx surge dist",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
