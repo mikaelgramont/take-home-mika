@@ -3,6 +3,7 @@ import type { DataRoomItem, Folder } from "@/types";
 /**
  * Converts a path string (e.g., "folder1/folder2/file.pdf") to an array of path segments
  * Handles URL decoding for special characters like spaces (%20)
+ * Strips file extensions from URLs to avoid Surge static file handling
  */
 export function parsePath(path: string): string[] {
   if (!path || path === "/") {
@@ -11,7 +12,23 @@ export function parsePath(path: string): string[] {
   return path
     .split("/")
     .filter((segment) => segment.length > 0)
-    .map((segment) => decodeURIComponent(segment));
+    .map((segment) => {
+      const decoded = decodeURIComponent(segment);
+      // Strip file extensions for URL routing (but keep them in data structure)
+      return stripFileExtension(decoded);
+    });
+}
+
+/**
+ * Strips file extension from a filename for URL routing
+ * This prevents Surge from treating URLs as static file requests
+ */
+function stripFileExtension(filename: string): string {
+  const lastDotIndex = filename.lastIndexOf(".");
+  if (lastDotIndex > 0) {
+    return filename.substring(0, lastDotIndex);
+  }
+  return filename;
 }
 
 /**
@@ -27,6 +44,7 @@ export function buildPath(segments: string[]): string {
 
 /**
  * Finds an item by its path in the data room structure
+ * Handles file extensions by matching against the base name
  */
 export function findItemByPath(
   rootFolder: Folder,
@@ -46,7 +64,16 @@ export function findItemByPath(
     }
 
     const folder = current as Folder;
-    const found = folder.children.find((child) => child.name === segment);
+    // Try exact match first, then try matching without file extension
+    let found = folder.children.find((child) => child.name === segment);
+
+    if (!found) {
+      // If no exact match, try to find by base name (without extension)
+      found = folder.children.find((child) => {
+        const childBaseName = stripFileExtension(child.name);
+        return childBaseName === segment;
+      });
+    }
 
     if (!found) {
       return null; // Segment not found
@@ -60,6 +87,7 @@ export function findItemByPath(
 
 /**
  * Gets the path string for a given item
+ * Strips file extensions from URLs to avoid Surge static file handling
  */
 export function getItemPath(item: DataRoomItem, rootFolder: Folder): string {
   if (item.id === rootFolder.id) {
@@ -71,7 +99,9 @@ export function getItemPath(item: DataRoomItem, rootFolder: Folder): string {
 
   // Build path by traversing up to root
   while (current && current.id !== rootFolder.id) {
-    path.unshift(current.name);
+    // Strip file extension for URL routing
+    const nameForUrl = stripFileExtension(current.name);
+    path.unshift(nameForUrl);
 
     // Find parent
     if (current.parentId) {
