@@ -32,3 +32,7 @@ I'll be adding notes here as I build this.
 13. Added restrictions on file uploads (no empty files) and file/folder renaming (max file or folder name length - 255 chars, non-ASCII characters in file or folder names, existing file or folder names in a given folder - case insensitive, max depth of 32 folders).
 
 14. Mobile rendering improvements.
+
+15. Tweaks for hosting on Surge: use a 200.html file as per the [docs](https://surge.sh/help/adding-a-200-page-for-client-side-routing).
+
+16. Display success messages in the status bar.

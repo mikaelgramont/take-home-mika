@@ -30,6 +30,7 @@ function DataRoomApp() {
   const [dataRoom, setDataRoom] = useState<DataRoom | null>(null);
   const [selectedItem, setSelectedItem] = useState<DataRoomItem | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [newFolderDialogOpen, setNewFolderDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
@@ -78,6 +79,16 @@ function DataRoomApp() {
     return dataRoom.rootFolder.children;
   };
 
+  // Helper function to show success message
+  const showSuccessMessage = (message: string) => {
+    setSuccessMessage(message);
+    setError(null);
+    // Auto-hide success message after 10 seconds
+    setTimeout(() => {
+      setSuccessMessage(null);
+    }, 10000);
+  };
+
   const handleItemSelect = (item: DataRoomItem | null) => {
     if (!dataRoom) {
       return;
@@ -114,6 +125,7 @@ function DataRoomApp() {
             navigate(newPath);
           }
         }
+        showSuccessMessage(`Folder renamed to "${newName}" successfully`);
       }
     } catch (err) {
       setError(
@@ -148,6 +160,7 @@ function DataRoomApp() {
             navigate("/");
           }
         }
+        showSuccessMessage("Folder deleted successfully");
       }
     } catch (err) {
       setError(
@@ -178,6 +191,7 @@ function DataRoomApp() {
             navigate(newPath);
           }
         }
+        showSuccessMessage(`File renamed to "${newName}" successfully`);
       }
     } catch (err) {
       setError(
@@ -212,6 +226,7 @@ function DataRoomApp() {
             navigate("/");
           }
         }
+        showSuccessMessage("File deleted successfully");
       }
     } catch (err) {
       setError(
@@ -263,6 +278,7 @@ function DataRoomApp() {
           updatedDataRoom.rootFolder
         );
         navigate(newFolderPath);
+        showSuccessMessage(`Folder "${folderName}" created successfully`);
       }
     } catch (err) {
       setError(
@@ -316,6 +332,14 @@ function DataRoomApp() {
           const filePath = getItemPath(firstFile, updatedDataRoom.rootFolder);
           navigate(filePath);
         }
+
+        // Show success message
+        const fileCount = files.length;
+        const message =
+          fileCount === 1
+            ? `File "${files[0].name}" uploaded successfully`
+            : `${fileCount} files uploaded successfully`;
+        showSuccessMessage(message);
       }
     } catch (err) {
       setError(
@@ -387,7 +411,7 @@ function DataRoomApp() {
       {/* Messages */}
       <div className="grid-area-messages bg-gray-100 border-t border-gray-200 flex items-center px-6">
         <p className={`text-sm ${error ? "text-red-600" : "text-gray-600"}`}>
-          {error || "Ready"}
+          {error || successMessage || "Ready"}
         </p>
       </div>
 
