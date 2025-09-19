@@ -82,7 +82,9 @@ export default function RenameDialog({
               Rename {itemType === "file" ? "File" : "Folder"}
             </DialogTitle>
             <DialogDescription>
-              Enter a new name for the {itemType} "{currentName}".
+              <span className="break-all">
+                Enter a new name for the {itemType} "{currentName}".
+              </span>
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">

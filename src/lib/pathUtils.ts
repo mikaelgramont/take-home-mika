@@ -21,13 +21,35 @@ export function parsePath(path: string): string[] {
 
 /**
  * Strips file extension from a filename for URL routing
- * This prevents Surge from treating URLs as static file requests
+ * Only strips when a known extension appears at the end of the name
+ * This prevents treating mid-name substrings like ".pdf" as extensions
  */
 function stripFileExtension(filename: string): string {
-  const lastDotIndex = filename.lastIndexOf(".");
-  if (lastDotIndex > 0) {
-    return filename.substring(0, lastDotIndex);
+  const knownExtensions = [".pdf", ".jpg", ".png", ".txt"];
+  const lower = filename.toLowerCase();
+
+  // Find the longest matching extension at the end
+  let bestMatch = "";
+  for (const ext of knownExtensions) {
+    if (lower.endsWith(ext) && ext.length > bestMatch.length) {
+      bestMatch = ext;
+    }
   }
+
+  // Only strip if we found a match and it's not just a substring in the middle
+  // We need to ensure there's actually a meaningful separation (not just repeated patterns)
+  if (bestMatch) {
+    const withoutExt = filename.slice(0, filename.length - bestMatch.length);
+    // If the remaining part is very short or looks like it might be a real base name,
+    // then it's probably a real extension. Otherwise, it might be part of a pattern.
+    if (
+      withoutExt.length > 0 &&
+      !withoutExt.endsWith(bestMatch.replace(".", ""))
+    ) {
+      return withoutExt;
+    }
+  }
+
   return filename;
 }
 

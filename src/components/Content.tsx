@@ -26,10 +26,10 @@ export default function Content({
       {selectedItem ? (
         <div>
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-xl font-semibold text-gray-900 break-all">
               {selectedItem.name}
             </h2>
-            <p className="text-sm text-gray-500 capitalize">
+            <p className="text-sm text-gray-500 capitalize break-all">
               {selectedItem.type}
             </p>
           </div>

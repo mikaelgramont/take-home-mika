@@ -39,7 +39,9 @@ export default function DeleteDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-destructive">{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogDescription>
+            <span className="break-all">{description}</span>
+          </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button
